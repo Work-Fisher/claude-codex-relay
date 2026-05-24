@@ -1,0 +1,4 @@
+# Runtime artifacts
+handoff/codex.lock
+hooks/*.log
+hook-trigger.txt

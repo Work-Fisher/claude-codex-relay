@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"C:\\path\\to\\claude-codex-relay\\hooks\\run-codex.ps1\"",
+            "asyncRewake": true,
+            "timeout": 1800
+          }
+        ]
+      }
+    ]
+  }
+}
