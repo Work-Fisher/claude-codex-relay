@@ -58,7 +58,7 @@ Claude (规划+审核) + Codex (执行写代码) 双 AI 协作链路。Claude �
 
 ## 三文件格式
 
-设根目录为 `<ROOT>` (本项目 = `C:\path\to\claude-codex-relay`)。
+设根目录为 `<ROOT>` (你 clone 时本地的绝对路径)。
 
 ### `<ROOT>/handoff/brief.md` (Claude → Codex)
 ```markdown
