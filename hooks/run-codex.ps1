@@ -1,6 +1,12 @@
-# Triggered by Claude Code PostToolUse:Write hook.
+﻿# Triggered by Claude Code PostToolUse:Write hook.
 # Only fires Codex when Claude writes handoff/brief.md.
 # After Codex finishes, exit 2 + stderr wakes Claude up via asyncRewake.
+#
+# Requires: codex CLI >= 0.133 (older CLIs default to gpt-5.5 but fail with
+#           "model requires a newer version of Codex").
+# Encoding: this file MUST be saved as UTF-8 with BOM. PowerShell 5.1 on a
+#           zh-CN system reads BOMless UTF-8 as GBK, mangling the here-string
+#           below and causing "string is missing the terminator: \"@" errors.
 
 $ErrorActionPreference = "Continue"
 
