@@ -82,9 +82,15 @@ try {
 写**其他文件** (.py / data/*.csv / 其他 markdown / 源码修改) 不受这条限制, 正常用 apply_patch 即可. 本禁令只针对 handoff/result.md 这一个路径.
 "@
 
+    # Sandbox mode: danger-full-access (A1, 2026-05-26 修复).
+    # 原因: workspace-write 在 Windows 上依赖 CodexSandboxOffline 本地账户 +
+    # CreateProcessWithLogonW. Hook stable 0.133 跟 Desktop alpha 共存时
+    # sandbox_users.json 缓存密码会跟系统本地账户漂移, 触发 ERROR_LOGON_FAILURE (1326)
+    # → 10 次后 ERROR_ACCOUNT_LOCKED_OUT (1909, 锁 10 分钟).
+    # 详见: SKILL.md "hook 已知坑 #2 · sandbox 账户锁定"
     $codexOut = $prompt | codex --ask-for-approval never exec `
         -C $root `
-        --sandbox workspace-write `
+        --sandbox danger-full-access `
         --skip-git-repo-check `
         --color never `
         --output-last-message $result `
@@ -95,7 +101,36 @@ try {
 
     if (Test-Path $lock) { Remove-Item $lock -Force -ErrorAction SilentlyContinue }
 
+    # A3 (2026-05-26): exit=0 不足以判 SUCCESS, 还要扫 result.md 是否含失败信号.
+    # 历史坑: codex sandbox 启动失败时 exit=0 + result.md 含 "CreateProcessWithLogonW failed",
+    # 旧 hook 误报 SUCCESS, Claude 拿到假成功消息浪费一轮 review.
     if ($code -eq 0 -and (Test-Path $result)) {
+        $resultContent = ""
+        try { $resultContent = Get-Content $result -Raw -Encoding UTF8 -ErrorAction Stop } catch {}
+
+        $failureSignals = @(
+            'CreateProcessWithLogonW failed',
+            '无法读取工作区',
+            '无法读取.*brief\.md',
+            'shell_command 启动失败',
+            'sandbox.*failed',
+            '执行端无法'
+        )
+        $matchedSignal = $null
+        foreach ($pattern in $failureSignals) {
+            if ($resultContent -match $pattern) {
+                $matchedSignal = $matches[0]
+                break
+            }
+        }
+
+        if ($matchedSignal) {
+            $msg = "Codex 假成功 (exit=0 但 result.md 含失败信号: '$matchedSignal'). Hook 判 FAILURE. 详见 SKILL.md hook 已知坑 #2."
+            [Console]::Error.WriteLine($msg)
+            Log "FALSE-SUCCESS signal=$matchedSignal"
+            exit 2
+        }
+
         $msg = "Codex 完成 ($(Get-Date -Format 'HH:mm:ss')). result.md 已就绪, 请读取 handoff/result.md, 审核并写 handoff/review.md, 然后向用户报告 review 结论等待拍板。"
         [Console]::Error.WriteLine($msg)
         Log "SUCCESS"
