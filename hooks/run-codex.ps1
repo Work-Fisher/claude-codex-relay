@@ -70,7 +70,16 @@ try {
 2. 如果 brief 没指定输出格式 → 用 Markdown 写一份给 Claude 的简洁交接报告, 必须含: ## summary (这次做了啥), ## artifacts (产出的文件 / 数据 / 结论清单), ## blockers (有阻塞就写, 没有就 "无")
 
 不要输出寒暄。不要套用跟 brief 任务无关的标题 (例如 brief 是数据分析时, 不要硬塞 files_changed / tests).
-你的最终回复会被 codex exec 自动写入 handoff/result.md。
+
+## handoff/result.md 输出方式 (必读, 决定你这次成败)
+
+机制: 你的最终回复会被 codex exec 通过 --output-last-message 自动写入 handoff/result.md.
+
+**禁止用 apply_patch / shell / 任何工具调用直接修改 handoff/result.md** (即使内容长 5k、10k tokens 也禁止). 你必须**把完整内容作为最终回复 inline 输出**, 不要写 "已完成, 详见 result.md" 这种自述性总结.
+
+为什么: 如果你用 apply_patch 写 result.md, codex exec 退出时会用你的最终消息 (那段简短自述) 覆盖你 apply_patch 写的真内容, 报告会丢失.
+
+写**其他文件** (.py / data/*.csv / 其他 markdown / 源码修改) 不受这条限制, 正常用 apply_patch 即可. 本禁令只针对 handoff/result.md 这一个路径.
 "@
 
     $codexOut = $prompt | codex --ask-for-approval never exec `
