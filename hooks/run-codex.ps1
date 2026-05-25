@@ -62,16 +62,15 @@ try {
 
     $prompt = @"
 你是 Codex 执行端。
-请读取 $brief, 按 brief 的要求完成代码/文档/测试任务。
+请读取 $brief, 按 brief 的要求完成任务 (可以是代码 / 文档 / 数据分析 / 研究 / 任何形式).
 工作目录是 $root.
 
-完成后, 你的最终回复必须是写给 Claude 的交接结果, Markdown 格式, 包含以下小标题:
-## summary
-## files_changed
-## tests
-## blockers
+输出规则 (按优先级):
+1. 如果 brief 明确指定了输出格式 (例如"产出: 3 条发现 + 2 个洞察") → 严格按 brief 的格式输出
+2. 如果 brief 没指定输出格式 → 用 Markdown 写一份给 Claude 的简洁交接报告, 必须含: ## summary (这次做了啥), ## artifacts (产出的文件 / 数据 / 结论清单), ## blockers (有阻塞就写, 没有就 "无")
 
-不要输出寒暄。你的最终回复会被 codex exec 自动写入 handoff/result.md。
+不要输出寒暄。不要套用跟 brief 任务无关的标题 (例如 brief 是数据分析时, 不要硬塞 files_changed / tests).
+你的最终回复会被 codex exec 自动写入 handoff/result.md。
 "@
 
     $codexOut = $prompt | codex --ask-for-approval never exec `

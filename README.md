@@ -64,9 +64,22 @@ $bytes = [System.IO.File]::ReadAllBytes("...你的路径...\hooks\run-codex.ps1"
 - **不 fork Claude Code 源码改协议.** 维护爆炸.
 - **不为简单任务走这套.** 修 typo / 改一行直接让 Claude 自己改, 中转成本比省下的时间高.
 
+## SKILL 安装 (可选, 推荐)
+
+把 `SKILL.md` 复制到你的 Claude Code 全局 SKILL 目录:
+
+```powershell
+$dest = "$env:USERPROFILE\.claude\skills\claude-codex-relay"
+New-Item -ItemType Directory -Force $dest | Out-Null
+Copy-Item SKILL.md "$dest\SKILL.md"
+```
+
+装完之后, 任何项目里跟 Claude 说"走 codex 做 X"就会自动激活协议 — 不用每次手动解释 2 拍板点规则.
+
 ## 详细看哪
 
 - `CLAUDE.md` — 项目级常驻协议. 新会话启动自动加载. 完整链路图 / 三文件格式 / 8 个技术坑 / 失败兜底矩阵
 - `JOURNEY.md` — 怎么决策走到这套的, 含 7 轮拷问 + 排除的死路 + 首次实战复盘
+- `SKILL.md` — Claude Code SKILL 文件, 复制到 `~/.claude/skills/claude-codex-relay/` 后跨项目自动激活
 - `.claude/settings.json` — hook 配置, 一行需要改
 - `hooks/run-codex.ps1` — hook 主脚本, 一般不动

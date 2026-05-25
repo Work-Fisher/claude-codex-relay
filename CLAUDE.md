@@ -49,7 +49,7 @@ Claude (规划+审核) + Codex (执行写代码) 双 AI 协作链路。Claude �
 | 目标 / 为什么做 | 实际写代码 |
 | 接口/结构: 函数签名, 数据格式, 文件位置 | 选具体 lib, 跑测试, 修 lint |
 | 关键决策方向 (用"一类"库, 不指定具体) | 处理编译/运行时错误 |
-| 完成判据: 测试覆盖, 跑起来什么样 | 写 result.md 总结 (summary/files_changed/tests/blockers) |
+| 完成判据: 测试覆盖, 跑起来什么样 | 写 result.md (格式自适应: brief 指定格式按 brief; 没指定则默认 summary/artifacts/blockers) |
 | Out of scope: 明确不做什么 (**防过度工程关键**) | |
 
 **铁律**:
@@ -69,13 +69,13 @@ Claude (规划+审核) + Codex (执行写代码) 双 AI 协作链路。Claude �
 ## Out of scope    ← 显式写, 防 Codex 加 main 包装/argparse/tests 之类过度工程
 ```
 
-**不要写 `## 回复格式`** — `hooks/run-codex.ps1` 的 prompt 已经强制 Codex 用 4 小标题 (summary/files_changed/tests/blockers), brief 里再写是冗余。
+**如需固定 result.md 格式, 在 brief 里显式写** (如 `## 期望产出`). hook prompt 自适应: brief 指定格式 → 按 brief; 没指定 → 默认三段。
 
 ### `<ROOT>/handoff/result.md` (Codex → Claude, `--output-last-message` 自动写)
+默认格式 (brief 未指定时):
 ```markdown
 ## summary
-## files_changed
-## tests
+## artifacts
 ## blockers
 ```
 
