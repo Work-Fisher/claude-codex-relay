@@ -3,7 +3,7 @@ name: claude-codex-relay
 description: >
   Claude + Codex CLI 双 AI 协作工作流. Claude 写 brief 触发 PostToolUse hook,
   hook 调 codex exec 后台跑代码, 跑完 asyncRewake 把 Claude 叫回 review.
-  2 拍板点用户控环. 前置: 当前项目装好 hook (.claude/settings.json + hooks/run-codex.ps1) 且 codex CLI >= 0.133.
+  2 拍板点用户控环. 前置: 当前项目装好 hook (.claude/settings.json 或 settings.local.json + hooks/run-codex.{ps1,sh}) 且 codex CLI >= 0.133.
   仅在用户显式触发时激活. 触发词: 走 codex / 用 codex 做 / 用 codex 干 / 双 AI 协作 / claude-codex / claude-codex-relay.
 ---
 
@@ -13,16 +13,23 @@ description: >
 
 ## 自检 (触发后第一件事)
 
-1. `.claude/settings.json` 存在, `command` 字段路径指向真实存在的 `hooks/run-codex.ps1`
+先读 `.claude/settings.json` (或 `settings.local.json`) 拿 hook `command` 字段, 根据脚本扩展名判 OS 后逐项检:
+
+1. hook `command` 路径指向真实存在的脚本 (`.ps1` for Windows / `.sh` for macOS / Linux)
 2. `codex --version` >= 0.133
-3. `hooks/run-codex.ps1` 是 UTF-8 with BOM (前 3 字节 EF BB BF) — 验证:
-   ```powershell
-   $b = [IO.File]::ReadAllBytes('hooks\run-codex.ps1'); "$($b[0]),$($b[1]),$($b[2])"
-   # 应输出 239,187,191 — 不是则按 README "装" 一节修复
-   ```
+3. hook 脚本完整性 (OS 分支):
+   - Windows / `.ps1`: UTF-8 with BOM (前 3 字节 EF BB BF):
+     ```powershell
+     $b = [IO.File]::ReadAllBytes('hooks\run-codex.ps1'); "$($b[0]),$($b[1]),$($b[2])"
+     # 应输出 239,187,191 — 不是则按 README "装" 一节修复
+     ```
+   - macOS / Linux / `.sh`: executable bit:
+     ```bash
+     ls -l hooks/run-codex.sh   # mode 应含 x; 没有则 chmod +x hooks/run-codex.sh
+     ```
 4. `handoff/codex.lock` 不存在 (有 = 上次卡死, 删之)
 
-任一不过 → 告知用户具体哪条 + 给修复命令, 引向源仓库 README。
+任一不过 → 告知用户具体哪条 + 给修复命令, 引向源仓库 README (macOS / Linux 用户还可参考 `README-macOS.md`)。
 
 ## 2 拍板点协议 (不可跳过)
 
@@ -43,7 +50,7 @@ brief 必含 4 段: 目标 / 接口或结构 / 完成判据 / **Out of scope** (
 | **`result.md` 是简短"已完成"总结 (<500 字节) + codex.log 显示 SUCCESS + jsonl token 用量大 (output > 5k)** | **典型 hook 覆盖坑** — codex agent 用 apply_patch 写了完整内容, 但 `--output-last-message` 用最后那条简短消息覆盖了. 走 `references/extract_result.py <jsonl_path>` 从 session jsonl 重建. 根治见下节 "hook 已知坑 #1" |
 | **`result.md` 含 "CreateProcessWithLogonW failed: 1326/1909"** | **Windows sandbox 账户锁定** — sandbox 密码漂移 → 重试 → 账户锁定 → exit=0 但实为假成功. 立即改用 `--sandbox danger-full-access`. 详见 "hook 已知坑 #2" |
 | codex 写歪 | `git restore .` 撤 working tree; `git reset --hard HEAD^` 撤已 commit |
-| lock 卡死 | `Remove-Item handoff/codex.lock` |
+| lock 卡死 | Windows: `Remove-Item handoff/codex.lock` · macOS / Linux: `rm handoff/codex.lock` |
 
 session jsonl 路径: `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-*.jsonl` (Windows: `C:\Users\<user>\.codex\sessions\...`)
 
@@ -65,7 +72,7 @@ session jsonl 路径: `~/.codex/sessions/YYYY/MM/DD/rollout-<timestamp>-*.jsonl`
 
 推荐 1, 因为 long output 也能 inline (codex 没有 token 截断, 只是 agent 习惯用工具), 一次改 hook 永久生效.
 
-**当前状态**: 方向 1 已在 `run-codex.ps1` 实施 (prompt 里的 `## handoff/result.md 输出方式` 一节). 新跑的任务不应再踩此坑.
+**当前状态**: 方向 1 在 `run-codex.ps1` 和 `run-codex.sh` 都已实施 (prompt 里的 `## handoff/result.md 输出方式` 一节). 新跑的任务不应再踩此坑.
 
 兜底: 历史 session 丢了报告 → 用 `references/extract_result.py` 重建.
 

@@ -3,3 +3,7 @@ handoff/
 samples/
 hooks/*.log
 hook-trigger.txt
+
+# Per-user Claude Code settings override (macOS / Linux users put their
+# absolute hook path here so the shared .claude/settings.json stays clean).
+.claude/settings.local.json
